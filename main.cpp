@@ -207,26 +207,24 @@ using namespace prefix_table;
 
 int main()
 {
-
-  prefix_ p("235.5.2.0/21 A");
-
-  prefix_ p2("233.5.2.0/21 B");
-  prefix_ p3("255.5.2.0/21 C");
-  prefix_ p4("23.5.2.0/21 D");
-  prefix_ p5("231.5.2.0/21 E");
-
-ccd
-
+ prefix_ p3("2.5.2.0/21 C");
+  prefix_ p("2.5.2.0/20 A");
+ 
+   prefix_ p2("23.5.122.0/12 B");
   tree t;
   t.add(p);
+
   t.add(p2);
   t.add(p3);
-  t.add(p4);
-  t.add(p5);
+  t.print();
 
-  t.find("235.5.2.14");
+  // t.add(p4);
+  // t.add(p5);
 
-  //    t.remove(p2);
+   t.find("23.15.2.14");
+  
+
+    //  t.remove(p2);
 
   // t.print();
 
