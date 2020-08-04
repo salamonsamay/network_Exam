@@ -20,7 +20,7 @@ namespace prefix_table
     {
         string action, decimal_prefix, binary_prefix;
         prefix_ *left0 = nullptr, *right1 = nullptr;
-        int type, prefixSize = 0, index = 1;
+        int type, prefixSize = 0;
         //type=0 is prefix road ,type=1 is prefix with action ,type=2 is ip address with 32 bits;
 
         prefix_(string dp = "") : decimal_prefix(dp)
@@ -140,6 +140,15 @@ namespace prefix_table
             this->decimal_prefix = address.decimal_prefix;
             this->type = address.type;
         }
+        bool operator==(prefix_ pref)
+        {
+            if (this->action == pref.action && this->binary_prefix == pref.binary_prefix && this->decimal_prefix == pref.decimal_prefix && this->type == pref.type)
+            {
+                return true;
+            }
+            return false;
+        }
+
         void setBinaryPrefix(string s)
         {
             this->binary_prefix = s;
@@ -157,24 +166,19 @@ namespace prefix_table
         {
             this->type = n;
         }
-        void setIndex(int n)
-        {
-            index = n;
-        }
+
         int getPrefixSize()
         {
             return this->prefixSize;
-        }
-        int getIndex()
-        {
-            return index;
         }
 
         string getBinaryPrefix()
         {
             return binary_prefix;
         }
-
+         string getDecimalPrefix(){
+            return decimal_prefix;
+        }
         string getAction()
         {
             return action;
@@ -209,11 +213,11 @@ namespace prefix_table
     public:
         prefix_ *root = new prefix_();
         prefix_ *pointer = nullptr;
-        bool flage=true;
+        bool flage = true;
 
         void add(prefix_ &address)
         {
-            int index = 1;
+            int index = 0;
             pointer = root;
             string prefix = address.getBinaryPrefix();
             for (int i = 0; i < prefix.size(); i++)
@@ -225,7 +229,6 @@ namespace prefix_table
                         pointer->left0 = new prefix_();
                     }
                     pointer = pointer->left0;
-                    index *= 2;
                 }
                 if (prefix.at(i) == '1')
                 {
@@ -234,69 +237,72 @@ namespace prefix_table
                         pointer->right1 = new prefix_();
                     }
                     pointer = pointer->right1;
-                    index *= 2 + 1;
                 }
+                index++;
             }
-            address.setIndex(index);
+
             *pointer = address;
-            cout << "Added " << pointer->decimal_prefix << " at the depth " << pointer->getPrefixSize() << " total nodes " << pointer->getBinaryPrefix() << " Found " << endl;
+            cout << "Added " << pointer->decimal_prefix << " at the depth " << index << " total nodes " << pointer->getBinaryPrefix() << " Found " << endl;
         }
 
         void find(string ip)
         {
-            string octeta1 = ip.substr(0, ip.find('.'));
-            ip = ip.substr(ip.find('.') + 1);
+            string temp = ip;
+            ////////////////////////////////////////////////////////////////////
+            string octeta1 = temp.substr(0, temp.find('.'));
+            temp = temp.substr(temp.find('.') + 1);
 
-            string octeta2 = ip.substr(0, ip.find('.'));
-            ip = ip.substr(ip.find('.') + 1);
+            string octeta2 = temp.substr(0, temp.find('.'));
+            temp = temp.substr(temp.find('.') + 1);
 
-            string octeta3 = ip.substr(0, ip.find('.'));
-            ip = ip.substr(ip.find('.') + 1);
+            string octeta3 = temp.substr(0, temp.find('.'));
+            temp = temp.substr(temp.find('.') + 1);
 
-            string octeta4 = ip;
+            string octeta4 = temp;
             octeta1 = pointer->convertToBnary2(octeta1);
             octeta2 = pointer->convertToBnary2(octeta2);
             octeta3 = pointer->convertToBnary2(octeta3);
             octeta4 = pointer->convertToBnary2(octeta4);
             string bin = octeta1 + octeta2 + octeta3 + octeta4;
-
+            /////////////////////////////////////////////////////////////////////////////////////
             pointer = root;
-
-            find(bin, *pointer);
+            find(bin, *pointer, ip);
             pointer = nullptr;
         }
 
-        void find(string &ip, prefix_ &root)
+        void find(string &binary, prefix_ &root, string &ip)
         {
-            if (ip.size() > 0)
+            if (binary.size() > 0)
             {
 
-                if (ip.at(0) == '0')
+                if (binary.at(0) == '0')
                 {
 
-                    string s = ip.substr(1);
+                    string s = binary.substr(1);
                     if (root.left0 != nullptr)
                     {
-                        find(s, *root.left0);
+                        find(s, *root.left0, ip);
                     }
                     if (root.getType() == 1 && flage)
                     {
-                        cout << root.getAction() << endl;
-                        flage =false;
+                        cout << "Found " << ip << "-->" << root.getAction() << " at the depth "
+                             << root.getPrefixSize() << endl;
+                        flage = false;
                     }
                 }
-                else if (ip.at(0) == '1')
+                else if (binary.at(0) == '1')
                 {
 
-                    string s = ip.substr(1);
+                    string s = binary.substr(1);
                     if (root.right1 != nullptr)
                     {
-                        find(s, *root.right1);
+                        find(s, *root.right1, ip);
                     }
                     if (root.getType() == 1 && flage)
                     {
-                        cout << root.getAction() << endl;
-                         flage =false;
+                        cout << "Found " << ip << "-->" << root.getAction() << " at the depth "
+                             << root.getPrefixSize() << endl;
+                        flage = false;
                     }
                 }
             }
@@ -304,8 +310,31 @@ namespace prefix_table
 
         void remove(prefix_ &pref)
         {
-        }
+            string path = pref.getBinaryPrefix();
+            pointer = root;
+            for (int i = 0; i < path.size(); i++)
+            {
+                if (path.at(i) == '0')
+                {
+                    pointer = pointer->left0;
+                }
+                else if (path.at(i) == '1')
+                {
+                    pointer = pointer->right1;
+                }
+            }
+            
 
+            if (pref == *pointer)
+            {
+
+                pointer->setType(0);
+                pointer->setAction("");
+                pointer->setBinaryPrefix("");
+            }
+            cout << "Removed " << pref.decimal_prefix << " at the depth " << pref.prefixSize << " nodes " << pref.getBinaryPrefix() << endl;
+            pointer = nullptr;
+        }
         void print()
         {
             pointer = root;
